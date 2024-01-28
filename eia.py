@@ -86,29 +86,66 @@ class Eia :
     # called data, and filtering info about the data (facets, frequencies, data columns.)
     def map_tree(self, df=pd.DataFrame(columns=['route', 'facet_list', 'freq_list', 'data_cols']),
                  route='', spacing='') :
+        """
+        Map all of the routes in the EIA API.
+        
+        Starting from a parent route (top-level is an empty string), recursively map all of the
+        children routes. Make a call at the level of the parent. Get the child routes of the parent.
+        For each child route call map_tree. Stop recursing when the response has no further routes.
+        At that point the resopnse will have a child node called data and filtering information about the data
+        (facets, frequencies, data columns).
+
+        Args:
+            df (DataFrame, optional): DataFrame to hold the results. Defaults to an empty DF defined as pd.DataFrame(columns=['route', 'facet_list', 'freq_list', 'data_cols']).
+            route (str, optional): the parent route. Defaults to '' which is the top level.
+            spacing (str, optional): simply used to format command line output. Defaults to ''.
+
+        Returns:
+            DataFrame: Pandas DataFrame containing information about each route under the parent.
+        """
+        
+        # For command line output.
         if route != '':
             print(f'{spacing}At route {route}')
         else :
             print('Top level')
         # Make the api call
         r = self.make_api_call(route, params={})
+        # If the response dictionary has a routes key, it had children routes.
+        # If not, it's a leaf and has data associated with it.
         if 'routes' in r :
+            # It has children so recurse.
             for route_table in r['routes'] :
                 rte = route + '/' + route_table['id']
                 df = self.map_tree(df, route=rte, spacing=spacing+'    ')
         else :
+            # It's a leaf so get the data filering information.
             spacing += '    '
             print(f"{spacing}{route}")
             # Get the lists of facets, data columns, and frequencies
+            # Add them to the df.
             facet_list = [f_table['id'] for f_table in r['facets']]
             freq_list = [freq_table['id'] for freq_table in r['frequency']]
             data_cols = [k for k in r['data'].keys()]
             df.loc[len(df)] = [route, facet_list, freq_list, data_cols]
-            # Print it to a csv file.
         return df
                 
     def get_data_from_route(self, route, data_cols=None, fcts_dict=None, freq_list = None, start=None, end=None, sort_col='period', sort_direction='desc') :
-        route_to_data = route+'/data'
+        """
+        Given a route that represent a child node in the EIA API, create a CSV file of the data associated with it.
+
+        Args:
+            route (string): route to a leave node in the API
+            data_cols (list, optional): List of data columns to include in the CSV. Defaults to None.
+            fcts_dict (dict, optional): Dictionary containing the facets we want to filter by. Defaults to None.
+            freq_list (list, optional): List of frequencies to receive (hourly, monthly, etc). Defaults to None.
+            start (string, optional): date after which to return data in the form 2024-01-28. Defaults to None.
+            end (string, optional): end data in the form 2024-01-28. Defaults to None.
+            sort_col (str, optional): column by which to sort. Defaults to 'period'.
+            sort_direction (str, optional): sort direction ascending or descending. Defaults to 'desc'.
+        """
+        route_to_data = route+'/data'        
+        # Fill in the parameters
         params = {}
         if data_cols :
             params['data[]'] = data_cols
@@ -125,13 +162,19 @@ class Eia :
         params['sort[0][column]'] = sort_col
         params['sort[0][direction]'] = sort_direction
         r = self.make_api_call(route_to_data, params)
+        # For kicks print the keys of the reponse.
         print(r.keys())
+        # If there are any warning, print them.
         if 'warnings' in r :
             print(r['warnings'])
+        # Print the total number of results.
         if 'total' in r :
             print(r['total'])
+        # Get the data from the response and
+        # store it in a df.
         data = r['data']        
         df = pd.DataFrame.from_dict(data)
+        # Save it in an appropriately named file.
         file_name = ''
         for s in route.split('/'):
             file_name = file_name + s+'-' if s !='' else file_name

@@ -11,6 +11,7 @@ data_getter = eia.Eia()
 #map_df.to_csv('all_routes_map.csv')
 
 
+# Create a CSV file with the data from the electicity retail-sales route.
 data_getter.get_data_from_route('electricity/retail-sales',
                                 data_cols=['revenue', 'sales', 'price', 'customers'],
                                 fcts_dict={'stateid':'MA', 'sectorid':'RES'},
