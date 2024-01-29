@@ -48,7 +48,10 @@ class Eia :
         """
         Make a call to the EIA api using the given parameters.
     
-
+        The method waits a second before making the call to avoid hitting
+        the API's rate limit. The documentation does not specify what that limit
+        is, but it mentions that there is one.
+        
         Args:
             route (string) : the path through the API
             params (dict): dictionary containing the parameters such as
@@ -61,13 +64,17 @@ class Eia :
         
         # Add the api key to the parameters.
         params['api_key'] = self.api_key
+        # Sleep for 1 second before making the request to prevent hitting
+        # the API's rate limit (not sure what it is) when there are repeated calls.
         # Add the route to the base url.
         # Make the request.
         # Return the response.
         try :
+            time.sleep(1)
             r = requests.get(self.base_url+route, params=params)
         except requests.exceptions.RequestException as e:
             print("Could not make the API request")
+            print(e)
         else :
             r = r.json()
             if 'response' in r :    

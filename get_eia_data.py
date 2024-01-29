@@ -10,12 +10,16 @@ data_getter = eia.Eia()
 # all of the routes.
 #map_df.to_csv('all_routes_map.csv')
 
+# Add a route to get a subtree.
+# This call will map the routes under the electicity node.
+elec_map_df = data_getter.map_tree('electicity')
+elec_map_df.to_csv('all_routes_map.csv')
 
 # Create a CSV file with the data from the electicity retail-sales route.
-data_getter.get_data_from_route('electricity/retail-sales',
-                                data_cols=['revenue', 'sales', 'price', 'customers'],
-                                fcts_dict={'stateid':'MA', 'sectorid':'RES'},
-                                freq_list=['monthly'])
+# data_getter.get_data_from_route('electricity/retail-sales',
+#                                 data_cols=['revenue', 'sales', 'price', 'customers'],
+#                                 fcts_dict={'stateid':'MA', 'sectorid':'RES'},
+#                                 freq_list=['monthly'])
 
 # get_data_from_route('electricity/electric-power-operational-data/',
 #                     data_cols=['generation', 'total-consumption', 'consumption-for-eg', 'consumption-uto', 'total-consumption-btu', 'consumption-for-eg-btu', 'consumption-uto-btu', 'stocks', 'receipts', 'receipts-btu', 'cost', 'cost-per-btu', 'sulfur-content', 'ash-content', 'heat-content'],
