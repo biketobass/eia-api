@@ -77,12 +77,13 @@ class Eia :
             print(e)
         else :
             r = r.json()
-            if 'response' in r :    
+            if 'response' in r :
                 return r['response']
             else :
                 print("The returned dictionary did not contain a key equal to 'response'. There must have been an error. Printing the full dictionary.")
                 print(r)
                 return {}
+
 
     # Recursively map all of the routes in the tree starting from a
     # parent route.
@@ -139,10 +140,10 @@ class Eia :
                 
     def get_data_from_route(self, route, data_cols=None, fcts_dict=None, freq_list = None, start=None, end=None, sort_col='period', sort_direction='desc') :
         """
-        Given a route that represent a child node in the EIA API, create a CSV file of the data associated with it.
+        Given a route that represent a leaf node in the EIA API, create a CSV file of the data associated with it.
 
         Args:
-            route (string): route to a leave node in the API
+            route (string): route to a leaf node in the API
             data_cols (list, optional): List of data columns to include in the CSV. Defaults to None.
             fcts_dict (dict, optional): Dictionary containing the facets we want to filter by. Defaults to None.
             freq_list (list, optional): List of frequencies to receive (hourly, monthly, etc). Defaults to None.
@@ -185,6 +186,9 @@ class Eia :
         file_name = ''
         for s in route.split('/'):
             file_name = file_name + s+'-' if s !='' else file_name
+        # Get rid of the extraneious hyphen at the end
+        file_name = file_name[:-1]
         df.to_csv(file_name+'.csv')
         print(df.head(20))
+        return df
 
