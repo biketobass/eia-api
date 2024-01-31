@@ -137,58 +137,106 @@ class Eia :
             data_cols = [k for k in r['data'].keys()]
             df.loc[len(df)] = [route, facet_list, freq_list, data_cols]
         return df
-                
-    def get_data_from_route(self, route, data_cols=None, fcts_dict=None, freq_list = None, start=None, end=None, sort_col='period', sort_direction='desc') :
+    
+    
+    def get_data_from_route(self, route, data_cols=None, fcts_dict=None, freq_list = None, start=None, end=None, sort_col='period',
+                            sort_direction='desc', offset=0, num_data_rows_per_call=5000) :
         """
-        Given a route that represent a leaf node in the EIA API, create a CSV file of the data associated with it.
+        Given a route that represent a leaf node in the EIA API, return a Pandas DataFrame of the data
+        associated with it and save a CSV file of the data.
+
+        Before calling this method, use map_tree to retrieve lists of data columns, facets, and frequencies available
+        for a particular route. Note also that the arguments offset and num_data_rows serve two functions. 1) The EIA
+        is only able to return 5000 rows of data per call. The defaults of offset = 0 and num_data_rows_per_call
+        = 5000 enable pagination of the data. If there are more than num_data_rows_per_call available this method will
+        retrieve the first num_data_rows_per_call. It will then increment offset by num_data_rows_per_call and make a
+        second call to receive the next batch. This behavior repeats until there are no more data rows to return.
+        2) It may be the case that you only want a certain number of rows starting at a particular rows. You can set
+        offset and num_data_rows to receive only the rows you are interested in.
 
         Args:
-            route (string): route to a leaf node in the API
+            route (string): route to a leaf node in the API as defined by the EIA API technical document.
             data_cols (list, optional): List of data columns to include in the CSV. Defaults to None.
             fcts_dict (dict, optional): Dictionary containing the facets we want to filter by. Defaults to None.
             freq_list (list, optional): List of frequencies to receive (hourly, monthly, etc). Defaults to None.
             start (string, optional): date after which to return data in the form 2024-01-28. Defaults to None.
-            end (string, optional): end data in the form 2024-01-28. Defaults to None.
+            end (string, optional): end date in the form 2024-01-28. Defaults to None.
             sort_col (str, optional): column by which to sort. Defaults to 'period'.
             sort_direction (str, optional): sort direction ascending or descending. Defaults to 'desc'.
+            offset (int, optional) : the number of data rows to skip. Defaults to 0.
+            num_data_rows_per_call : the maximum number of data rows the API should return per call. Defaults to 5000.
         """
+        if num_data_rows_per_call > 5000 :
+            print("The number of data rows per call can't be greater than 5,000. Setting it to 5,000.")
+            num_data_rows_per_call = 5000
         route_to_data = route+'/data'        
-        # Fill in the parameters
+        # Fill in the parameters for the API call.
         params = {}
+        # Data columns you want
         if data_cols :
             params['data[]'] = data_cols
+        # Facets to filter by
         if fcts_dict :
             for k,v in fcts_dict.items():
                 prm_key = f'facets[{k}][]'
                 params[prm_key] = v
+        # Frequencies you want
         if freq_list :
             params['frequency'] = freq_list
+        # Start and End
         if start :
             params['start'] = start
         if end:
             params['end'] = end
+        # Sort info.
         params['sort[0][column]'] = sort_col
         params['sort[0][direction]'] = sort_direction
-        r = self.make_api_call(route_to_data, params)
-        # For kicks print the keys of the reponse.
-        print(r.keys())
-        # If there are any warning, print them.
-        if 'warnings' in r :
-            print(r['warnings'])
-        # Print the total number of results.
-        if 'total' in r :
-            print(r['total'])
-        # Get the data from the response and
-        # store it in a df.
-        data = r['data']        
-        df = pd.DataFrame.from_dict(data)
-        # Save it in an appropriately named file.
+        # Set the max number of rows to receive.
+        params['length'] = num_data_rows_per_call
+        # DF to hold the results
+        complete_df = pd.DataFrame()
+        # Loop until there is no more data to retrieve.
+        while True :
+            # Set the offset here because it will be updated
+            # at the end of each iteration.
+            params['offset'] = offset
+            print(f"Making the call when offset = {offset}")
+            r = self.make_api_call(route_to_data, params)
+            # For kicks print the keys of the reponse.
+            print(r.keys())
+            # If there are any warnings, print them.
+            if 'warnings' in r :
+                print(r['warnings'])
+            # Print the total number of results.
+            if 'total' in r :
+                print(r['total'])
+            # Get the data from the response and
+            # store it in a df.
+            data = r['data']        
+            df = pd.DataFrame.from_dict(data)
+            # If there is data, add it to the full DF.
+            # Otherwise break out of the loop.
+            if len(df) > 0 :
+                # Concat this df with the one we'll return.
+                complete_df = pd.concat([complete_df, df])
+            else :
+                break
+            # Check if we've reach the end of the data.
+            # Break if we have.
+            if 'total' in r and len(complete_df) == int(r['total']) :
+                break
+                
+            # Increment the offset so that we don't get duplicated
+            # data.
+            offset += num_data_rows_per_call
+        # Save the complete_df in an appropriately named file.
+        complete_df = complete_df.reset_index(drop=True)
         file_name = ''
         for s in route.split('/'):
             file_name = file_name + s+'-' if s !='' else file_name
         # Get rid of the extraneious hyphen at the end
         file_name = file_name[:-1]
-        df.to_csv(file_name+'.csv')
-        print(df.head(20))
+        complete_df.to_csv(file_name+'.csv')
+        print(complete_df.head(20))
         return df
 
