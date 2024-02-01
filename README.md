@@ -81,16 +81,17 @@ data_getter.get_data_from_route('electricity/retail-sales',
                                 freq_list=['monthly'])
 ```
 
-`Eia.get_data_from_route` accepts other arguments in addition to those shown. They include start and end dates for limiting your search, sorting paramters that let you sort by a particular column and set the sort to be ascending or descending, and an offset and number of rows to be returned (more on those two [below](#rate-limits-and-pagination)).
+`Eia.get_data_from_route` accepts other keyword arguments in addition to those shown. They include start and end dates for limiting your search, sorting paramters that let you sort by a particular column and set the sort to be ascending or descending, and an offset and number of rows to be returned (more on those two [below](#rate-limits-and-pagination)).
 
-Be careful when you use facets. They are not consistent across routes. For example, in one route's list of facets you may see `stateid` and in another's `stateID`. Using the `map_tree` method to produce a CSV file that contains facet information before retrieving data helps avoid using the wrong facet name.
+Be careful when you use facets. They are not consistent across routes even when you would expect them to be. For example, in one route's list of facets you may see `stateid` and in another's `stateID`. Using the `map_tree` method to produce a CSV file that contains facet information before retrieving data helps avoid using the wrong facet name.
 
 # Rate Limits and Pagination
 The EIA API documentation indicates that there are rate limits and that applications that make too many calls in quick succession will be temporarilly stopped from accessing the API. Unfortunately, the documentation does not specify what those limits are.
 
-To head off potential rate limit issues, in `Eia.make_api_call` I have added a one second delay before making the call.
+To head off potential rate limit issues, in `Eia.make_api_call` which handles all calls to the API, I have added a one second delay before making a call.
 
-The EIA API documentation also specifies that it will return a maximum of 5,000 data rows at a time even if there are more data rows available. The method `EIA.get_data_from_route`, therefore, uses a combination of the API parameters `offset` and `length` (called `num_data_rows_per_call` in the argument list) to paginate the results to a maximum of 5,000 rows per page and then combines the pages into a single Pandas DataFrame to return. Essentially, `offset` tells the API how many rows to skip and `num_data_rows_per_call` tells the API how many rows to return. By iteratively updating `offset` by `num_data_rows_per_call` after each call, the method is able to retrieve all available data rows.
+The EIA API documentation also specifies that it will return a maximum of 5,000 data rows at a time even if there are more data rows available. The method `EIA.get_data_from_route`, therefore, uses a combination of the API parameters `offset` and `length` (called `num_data_rows_per_call` in the argument list) to paginate the results to a maximum of 5,000 rows per page and then combines the pages into a single Pandas DataFrame to return. Essentially, `offset` tells the API how many rows to skip and `num_data_rows_per_call` tells the API how many rows to return. By initializing `offset` to 0 and then iteratively incrementing it by `num_data_rows_per_call` after each call, the method is able to retrieve all available data rows.
 
-Note that if you don't want all of the available data rows, you can filter the data in a number of ways using facets, frequency, and start and end dates.
+As described above, if you don't want all of the available data rows, you can filter the data using facets, frequency, and start and end dates. You can also set the offset and number of data rows to return.
+
 
