@@ -165,6 +165,9 @@ class Eia :
             sort_direction (str, optional): sort direction ascending or descending. Defaults to 'desc'.
             offset (int, optional) : the number of data rows to skip. Defaults to 0.
             num_data_rows_per_call : the maximum number of data rows the API should return per call. Defaults to 5000.
+            
+         Returns:
+            DataFrame: Pandas DataFrame containing the data.
         """
         if num_data_rows_per_call > 5000 :
             print("The number of data rows per call can't be greater than 5,000. Setting it to 5,000.")
