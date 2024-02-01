@@ -200,16 +200,22 @@ class Eia :
             # Set the offset here because it will be updated
             # at the end of each iteration.
             params['offset'] = offset
-            print(f"Making the call when offset = {offset}")
+            print(f"Making the API call. offset = {offset}")
             r = self.make_api_call(route_to_data, params)
             # For kicks print the keys of the reponse.
+            print("The call returned with a dictionary whose keys are:")
             print(r.keys())
             # If there are any warnings, print them.
             if 'warnings' in r :
+                print("If the warning is about an incomplete return, " + 
+                      "it's probably nothing to worry about. It just " +
+                      "means that the number of rows returned is less " +
+                      "than the total available. The code will make as " +
+                      "many calls as necessary to retrieve all of the data.")
                 print(r['warnings'])
             # Print the total number of results.
             if 'total' in r :
-                print(r['total'])
+                print(f"The total number of results available = {r['total']}")
             # Get the data from the response and
             # store it in a df.
             data = r['data']        
@@ -231,6 +237,7 @@ class Eia :
             offset += num_data_rows_per_call
         # Save the complete_df in an appropriately named file.
         complete_df = complete_df.reset_index(drop=True)
+        print(f"The total number of rows of data retrieved is {len(complete_df)}.")
         file_name = ''
         for s in route.split('/'):
             file_name = file_name + s+'-' if s !='' else file_name
