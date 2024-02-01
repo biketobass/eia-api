@@ -66,7 +66,7 @@ complete_map_df = data_getter.map_tree()
 # Retrieving the Data
 Once you understand the API's routes and data filters, you can use `Eia.get_data_from_route` to retrieve the data you are interested in. The method both returns a DataFrame of the data and saves the data to a CSV file.
 
-It does this by adding `/data` to the end of a complete route. So in the eletricity retail sales example, it appends
+It does this by adding `/data` to the end of a complete route. So in the eletricity retail sales example, the path would be
 ```
 electricity/retail-sales/data
 ```
