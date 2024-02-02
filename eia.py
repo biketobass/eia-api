@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 import time
 import json
+import plotly.graph_objects as go
 
 
 class Eia :
@@ -140,7 +141,7 @@ class Eia :
     
     
     def get_data_from_route(self, route, data_cols=None, fcts_dict=None, freq_list = None, start=None, end=None, sort_col='period',
-                            sort_direction='desc', offset=0, num_data_rows_per_call=5000) :
+                            sort_direction='desc', offset=0, num_data_rows_per_call=5000, csv_file_name=None) :
         """
         Given a route that represent a leaf node in the EIA API, return a Pandas DataFrame of the data
         associated with it and save a CSV file of the data.
@@ -165,6 +166,7 @@ class Eia :
             sort_direction (str, optional): sort direction ascending or descending. Defaults to 'desc'.
             offset (int, optional) : the number of data rows to skip. Defaults to 0.
             num_data_rows_per_call : the maximum number of data rows the API should return per call. Defaults to 5000.
+            cvs_file_name (string, optional) : name of the csv file of the data that the method will create. If None, the filename will be based on the route. Defaults to None.
             
          Returns:
             DataFrame: Pandas DataFrame containing the data.
@@ -241,12 +243,15 @@ class Eia :
         # Save the complete_df in an appropriately named file.
         complete_df = complete_df.reset_index(drop=True)
         print(f"The total number of rows of data retrieved is {len(complete_df)}.")
-        file_name = ''
-        for s in route.split('/'):
-            file_name = file_name + s+'-' if s !='' else file_name
-        # Get rid of the extraneious hyphen at the end
-        file_name = file_name[:-1]
-        complete_df.to_csv(file_name+'.csv')
+        # Create the file name if it wasn't specified
+        if not csv_file_name :
+            csv_file_name = ''
+            for s in route.split('/'):
+                csv_file_name = csv_file_name + s+'-' if s !='' else csv_file_name
+            # Get rid of the extraneious hyphen at the end and add .csv
+            csv_file_name = csv_file_name[:-1] + '.csv'
+        complete_df.to_csv(csv_file_name)
         print(complete_df.head(20))
         return df
-
+    
+    

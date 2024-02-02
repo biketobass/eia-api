@@ -81,7 +81,7 @@ data_getter.get_data_from_route('electricity/retail-sales',
                                 freq_list=['monthly'])
 ```
 
-`Eia.get_data_from_route` accepts other keyword arguments in addition to those shown. They include start and end dates for limiting your search, sorting paramters that let you sort by a particular column and set the sort to be ascending or descending, and an offset and number of rows to be returned (more on those two [below](#rate-limits-and-pagination)).
+`Eia.get_data_from_route` accepts other keyword arguments in addition to those shown. They include start and end dates for limiting your search, sorting paramters that let you sort by a particular column and set the sort to be ascending or descending, and an offset and number of rows to be returned (more on those two [below](#rate-limits-and-pagination)). It also has a `csv_file_name` argument that if specified sets the name of the csv file the method will create.
 
 Be careful when you use facets. They are not consistent across routes even when you would expect them to be. For example, in one route's list of facets you may see `stateid` and in another's `stateID`. Using the `map_tree` method to produce a CSV file that contains facet information before retrieving data helps avoid using the wrong facet name.
 
