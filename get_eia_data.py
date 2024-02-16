@@ -29,9 +29,9 @@ data_getter = eia.Eia()
 
 # Uncomment to generate a map of electric plants in Massachusets using OpenStreetMap data.
 # Set the mapbox flag to True if you want Mapbox data (but you'll need a Mapbox API token (see README). 
-data_getter.map_electric_plants(facets={'stateid':['MA']}, mapbox=False, open_street=True,
-                                static_fig_title="Map of Electric Power Plants in Massachusets<br><sup>Size Represents Nameplate Capacity</sup>",
-                                dynamic_fig_title="Map of Electric Power Plants in Massachusets<br><sup>Size Represents Nameplate Capacity<br>(hover for details)</sup>")
+# data_getter.map_electric_plants(facets={'stateid':['MA']}, mapbox=False, open_street=True,
+#                                 static_fig_title="Map of Electric Power Plants in Massachusets<br><sup>Size Represents Nameplate Capacity</sup>",
+#                                 dynamic_fig_title="Map of Electric Power Plants in Massachusets<br><sup>Size Represents Nameplate Capacity<br>(hover for details)</sup>")
 
 # Uncomment to generate a map of electric plants in New England using OpenStreetMap data.
 # Set the mapbox flag to True if you want Mapbox data (but you'll need a Mapbox API token (see README). 
