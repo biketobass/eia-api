@@ -21,45 +21,21 @@ data_getter = eia.Eia()
 
 ## Examples of Retrieving Data.
 
-# Create a CSV file with the data from the electricity/retail-sales route.
-# Note the use of data columns, facets, and frequency.
-
-# data_getter.get_data_from_route('electricity/retail-sales',
-#                                 data_cols=['revenue', 'sales', 'price', 'customers'],
-#                                 fcts_dict={'stateid':'MA', 'sectorid':'RES'},
-#                                 freq_list=['monthly'])
-
-# A few other examples.
-
-# get_data_from_route('electricity/electric-power-operational-data/',
-#                     data_cols=['generation', 'total-consumption', 'consumption-for-eg', 'consumption-uto', 'total-consumption-btu', 'consumption-for-eg-btu', 'consumption-uto-btu', 'stocks', 'receipts', 'receipts-btu', 'cost', 'cost-per-btu', 'sulfur-content', 'ash-content', 'heat-content'],
-#                     freq_list=['quarterly'],
-#                     fcts_dict={'location':'MA', 'sectorid':'99'}
+# data_getter.get_data_from_route('electricity/operating-generator-capacity/',
+#                     data_cols=['nameplate-capacity-mw', 'net-summer-capacity-mw', 'net-winter-capacity-mw', 'operating-year-month', 'planned-retirement-year-month', 'planned-derate-year-month', 'planned-derate-summer-cap-mw', 'planned-uprate-year-month', 'planned-uprate-summer-cap-mw', 'county', 'longitude', 'latitude'],
+#                     fcts_dict={'stateid':'MA'},
+#                     start='2022-12-31'
 #                     )
 
-# get_data_from_route('electricity/rto/region-data/',
-#                     data_cols=['value'],
-#                     freq_list=['hourly'],
-#                     fcts_dict={'respondent':['ISNE']}
-#                     )
+# Uncomment to generate a map of electric plants in Massachusets using OpenStreetMap data.
+# Set the mapbox flag to True if you want Mapbox data (but you'll need a Mapbox API token (see README). 
+data_getter.map_electric_plants(facets={'stateid':['MA']}, mapbox=False, open_street=True,
+                                static_fig_title="Map of Electric Power Plants in Massachusets<br><sup>Size Represents Nameplate Capacity</sup>",
+                                dynamic_fig_title="Map of Electric Power Plants in Massachusets<br><sup>Size Represents Nameplate Capacity<br>(hover for details)</sup>")
 
-# get_data_from_route('electricity/rto/fuel-type-data/',
-#                     data_cols=['value'],
-#                     freq_list=['local-hourly'],
-#                     fcts_dict={'respondent':['ISNE']},
-#                     start='2024-01-20'
-#                     )
-
-# get_data_from_route('electricity/rto/interchange-data/',
-#                     data_cols=['value'],
-#                     freq_list=['local-hourly'],
-#                     fcts_dict={'fromba':['ISNE']},
-#                     start='2024-01-22'
-#                     )
-
-# get_data_from_route('electricity/rto/daily-region-data/',
-#                     data_cols=['value'],
-#                     freq_list=['daily'],
-#                     fcts_dict={'respondent':['ISNE'], 'type': ['NG', 'TI', 'D'], 'timezone':['Eastern']},
-#                     start='2023-12-31'
-#                     )
+# Uncomment to generate a map of electric plants in New England using OpenStreetMap data.
+# Set the mapbox flag to True if you want Mapbox data (but you'll need a Mapbox API token (see README). 
+# data_getter.map_electric_plants(facets={'stateid':['MA', "NH", "CT", "ME", "VT", "RI"]}, mapbox=False, open_street=True,
+#                                 open_street_file_name="open_street_NE_electric",
+#                                 static_fig_title="Map of Electric Power Plants in New England<br><sup>Size Represents Nameplate Capacity</sup>",
+#                                 dynamic_fig_title="Map of Electric Power Plants in New England<br><sup>Size Represents Nameplate Capacity<br>(hover for details)</sup>")                                

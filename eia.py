@@ -3,6 +3,7 @@ import requests
 import time
 import json
 import plotly.graph_objects as go
+import plotly.express as px
 
 
 class Eia :
@@ -14,6 +15,8 @@ class Eia :
     ----------
     api_key : string
         your EIA api key
+    mapbox_token : string
+        your mapbox api token (if you have one)
     base_url : string
         the base url of the EIA API
 
@@ -36,14 +39,15 @@ class Eia :
         """
         # Set the base url
         self.base_url = 'https://api.eia.gov/v2/'
-        # Retrieve the api key
+        # Retrieve the api key for EIA and for mapbox
         try :
             with open('api_key.json') as json_file:
-                self.api_key = json.load(json_file)['api_key']
+                apis = json.load(json_file)
+                self.api_key = apis['api_key']
+                self.mapbox_token = apis['mapbox_token'] if 'mapbox_token' in apis else None
         except FileNotFoundError:
             print('api_key.json does not exist yet. Consult the Readme.')
             quit()
-
 
     def make_api_call(self, route="", params={}) :
         """
@@ -253,5 +257,130 @@ class Eia :
         complete_df.to_csv(csv_file_name)
         print(complete_df.head(20))
         return df
+    
+    
+    def map_electric_plants(self, facets={'stateid':['MA']}, start='2023-09-31',
+                            mapbox=False, open_street=True,
+                            dynamic_fig_title="Map of Electric Plants",
+                            static_fig_title="Map of Electric Plants",
+                            init_zoom=7,
+                            open_street_file_name="open_street_map",
+                            mapbox_file_name="mapbox_map",
+                            static_width=1000,
+                            static_height=650) :
+        """
+        Map the eletrical plants within a region defined by the facets argument.
+        
+        Depending on the truth of the mapbox and open_street keywords the method will use
+        Plotly Express scatter_mapbox with Mapbox map data or with OpenStreetMap data. If
+        using, Mapbox, you will need a Mapbox API token already stored in the api_key.json.
+        See README. If are True, it will produce two maps, one with each type of map data.
+        
+        Saves both static (.png) and dynamic (.html) versions of the maps. 
+
+        Args:
+            facets (dict, optional): facets to define the region. Defaults to {'stateid':['MA']}.
+            start (str, optional): the earliest date from which to retrieve data. Defaults to '2023-09-31' which is fine because the method just looks for the most period.
+            mapbox (bool, optional): If True uses Mapbox . Defaults to False.
+            open_street (bool, optional): If True uses OpenStreetMap data with no token necessary. Defaults to True.
+            dynamic_fig_title (str, optional): Title for the dynamic html map. Defaults to "Map of Electric Plants".
+            static_fig_title (str, optional): Title for the static PNG map. Defaults to "Map of Electric Plants".
+            init_zoom (int, optional): Initial zoom level. Defaults to 7.
+            open_street_file_name (str, optional): The output file name (without file type suffix) to use for maps made with OpenStreetMap data. Defaults to "open_street_map".
+            mapbox_file_name (str, optional): The output file name (without file type suffix) to use for maps made with Mapbox data. Defaults to "mapbox_map".
+            static_width (int, optional): The width of the output static map. Defaults to 1000.
+            static_height (int, optional): The height of the output static map. Defaults to 650.
+        """
+        
+        # Start by getting the data from EIA.
+        df = self.get_data_from_route('electricity/operating-generator-capacity/',
+                                      data_cols=['nameplate-capacity-mw', 'net-summer-capacity-mw',
+                                                 'net-winter-capacity-mw', 'operating-year-month',
+                                                 'planned-retirement-year-month', 'planned-derate-year-month',
+                                                 'planned-derate-summer-cap-mw', 'planned-uprate-year-month',
+                                                 'planned-uprate-summer-cap-mw',
+                                                 'county', 'longitude', 'latitude'],
+                                      fcts_dict=facets,
+                                      start=start)
+        # Do some datatype conversions since the API returns all the data as String.
+        df['period'] = pd.to_datetime(df['period']) # Period should be datetime
+        df['latitude'] = df['latitude'].astype(float) # lat and long should be floats
+        df['longitude'] = df['longitude'].astype(float)
+        df['nameplate-capacity-mw'] = df['nameplate-capacity-mw'].astype(float) # So should nameplate capacity.
+        # Only look at the plants specified in the most recent report.
+        # Otherwise, we'll have lots of duplicates.
+        # Get the most recent period in the df and remove all other periods from the df.
+        most_recent_period = df.loc[0,'period']
+        df = df[df['period'] == most_recent_period]
+        
+        # Map the sizes from 1 to 25 based on the nameplate capacity.
+        cap_min = df['nameplate-capacity-mw'].min()
+        cap_max = df['nameplate-capacity-mw'].max()
+        target_max = 25
+        target_min = 1
+        df['marker_sizes'] = ((df['nameplate-capacity-mw'] - cap_min)/(cap_max - cap_min) * (target_max  - target_min)) + target_min
+        
+        # This is the text I want shown when we hover over a plant in the plotly versions
+        df['hover_text'] = (df['plantName'] + "<br>" + df['county'] + ", " + df['stateid'] +
+                      "<br>" + df['technology'] + "<br>" +
+                      df['energy-source-desc'] + "<br>" +
+                      df['nameplate-capacity-mw'].astype(str) + df['nameplate-capacity-mw-units'] +
+                      "<br>" + df['statusDescription'])
+        
+        # Create a dictionary for the columns and set each to False,
+        # because all the hover information I want is already
+        # in df['hover_text']. This prevents duplicate info from being shown
+        # upon hover.
+        hover_dict = dict()
+        for col in df.columns :
+            hover_dict[col] = False
+        # Define colors for fuel sources. This is not an exhaustive list.
+        # May need to add to this dictionary as I encounter fuel sources not specified.
+        fuel_subset_colors = {"Solar":'rgba(251,147,47,1.0)',
+                              "Wind":'rgba(133,85,161,1.0)',
+                              "Natural Gas":"rgba(200,200,100,0.6)",
+                              "Disillate Fuel Oil":'rgba(98,119,127,0.4)',
+                              "Residual Fuel Oil":'rgba(108,69,22,0.4)',
+                              "Water":'rgba(23,149,210,0.4)',
+                              "Landfill Gas":'rgba(64,211,151,1.0)',
+                              "Electricity used for energy storage": 'blue',
+                              "Municipal Solid Waste (All)":'rgba(132,85,54,1.0)',
+                              "Wood Waste Solids":'rgba(191,98,46,1.0)',
+                              "Other Biomass Gases":'rgba(177,102,33,0.4)',
+                              "Kerosene":'rgba(76,128,20)'}
+        # Create a fig using open_street_map
+        if open_street :
+            os_fig = px.scatter_mapbox(df, lat="latitude", lon="longitude", color="energy-source-desc",
+                                       hover_name="hover_text",
+                                       hover_data=hover_dict, # Since the values are all fase, we avoid redundant hover info.
+                                       size="marker_sizes", # Scaled according to capacity.
+                                       zoom=init_zoom,
+                                       color_discrete_map=fuel_subset_colors,
+                                       color_discrete_sequence=px.colors.qualitative.Alphabet,
+                                       title=dynamic_fig_title,
+                                       labels={"energy-source-desc":"Energy Source"}
+                                       )
+            os_fig.update_layout(mapbox_style="open-street-map")
+            os_fig.write_html(open_street_file_name+".html", full_html=False, include_plotlyjs='cdn')
+            os_fig.update_layout(title=static_fig_title)
+            os_fig.write_image(open_street_file_name+".png", width=static_width, height=static_height)
+        
+        if mapbox :
+            px.set_mapbox_access_token(self.mapbox_token)
+            mb_fig = px.scatter_mapbox(df, lat="latitude", lon="longitude", color="energy-source-desc",
+                                       hover_name="hover_text",
+                                       hover_data=hover_dict,
+                                       size="marker_sizes",
+                                       zoom=7,
+                                       color_discrete_map=fuel_subset_colors,
+                                       color_discrete_sequence=px.colors.qualitative.Alphabet,
+                                       title=dynamic_fig_title,
+                                       labels={"energy-source-desc":"Energy Source"}
+                                       )
+            mb_fig.write_html(mapbox_file_name+".html")
+            mb_fig.update_layout(title=static_fig_title)
+            mb_fig.write_image(mapbox_file_name+".png", width=static_width, height=static_height)
+        
+
     
     

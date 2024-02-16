@@ -7,7 +7,8 @@ In this README, I briefly describe
 - how the EIA's data is organized as a [tree structure](#understanding-the-organization-of-the-eias-data),
 - how to use my code to [map that tree](#mapping-the-api-data-routes),
 - how to [retrieve data](#retrieving-the-data) using filters defined by the EIA,
-- and how my code deals with [rate and data limits](#rate-limits-and-pagination).
+- how my code deals with [rate and data limits](#rate-limits-and-pagination),
+- and how to [produce detailed dynamic and static maps](#creating-dynamic-and-static-maps-of-electric-power-plants-within-a-region) of electricity power plants within a region (new as of 2/15/2024).
 
 # Getting Started
 Before you can use the API, you must register for an API key by clicking on the EIA's Register button [here](https://www.eia.gov/opendata/). Once you've gone through the registration process, the EIA will email to you your API key.
@@ -15,6 +16,12 @@ Before you can use the API, you must register for an API key by clicking on the 
 The code in this repository will look for your API key in a file called `api_key.json`. Create an empty file with that name in your working directory and add the single line below putting your key in the appropriate location. Make sure to leave the quotation marks.
 ```
 {"api_key" : "YOUR API KEY GOES HERE"}
+```
+
+Also, if you have a Mapbox API token that you want to use to generate dynamic and static maps using the `EIA.map_electric_plants` method [(see below)](#creating-dynamic-and-static-maps-of-electric-power-plants-within-a-region), add it to `api_key.json` as well. The resulting JSON will look as follows:
+```
+{"api_key": "YOUR API KEY GOES HERE",
+"mapbox_token":"YOUR MAPBOX API KEY GOES HERE"}
 ```
 
 # Understanding the Organization of the EIA's Data
@@ -93,5 +100,28 @@ To head off potential rate limit issues, in `Eia.make_api_call` which handles al
 The EIA API documentation also specifies that it will return a maximum of 5,000 data rows at a time even if there are more data rows available. The method `EIA.get_data_from_route`, therefore, uses a combination of the API parameters `offset` and `length` (called `num_data_rows_per_call` in the argument list) to paginate the results to a maximum of 5,000 rows per page and then combines the pages into a single Pandas DataFrame to return. Essentially, `offset` tells the API how many rows to skip and `num_data_rows_per_call` tells the API how many rows to return. By initializing `offset` to 0 and then iteratively incrementing it by `num_data_rows_per_call` after each call, the method is able to retrieve all available data rows.
 
 As described above, if you don't want all of the available data rows, you can filter the data using facets, frequency, and start and end dates. You can also set the offset and number of data rows to return.
+
+# Creating Dynamic and Static Maps of Electric Power Plants within a Region
+
+(New feature as of February 15, 2024)
+
+The `Eia.map_electric_plants` method uses the [Plotly Express](https://plotly.com/python/plotly-express/) `scatter_mapbox` method to produce both dynamic and static maps of the locations of electric power plants within a region.
+
+Use the `facets` keyword argument to specify the region of interest and use the `open_street` and `mapbox` boolean flags to specify whether you want to use [OpenStreetMap](https://www.openstreetmap.org/) map data and/or [Mapbox](https://www.mapbox.com/) data. Note that if you use Mapbox data, you will first need to register for an API token and add it to the `api_key.json` file as described [above](#eia-api). If you use OpenStreetMap, you do not need an API token. Consult the docstring in `eia.py` for more information about the method.
+
+Below is an example showing a static map of the eletric power plants in Massachusets.  The code, which also generates a dynamic HTML file, used to create the map is also shown. Note that the title string contains HTML tags which Plotly Express uses for formatting.
+```
+data_getter = eia.Eia()
+data_getter.map_electric_plants(facets={'stateid':['MA']}, mapbox=False, open_street=True,
+                                static_fig_title="Map of Electric Power Plants in Massachusets<br><sup>Size Represents Nameplate Capacity</sup>",
+                                dynamic_fig_title="Map of Electric Power Plants in Massachusets<br><sup>Size Represents Nameplate Capacity<br>(hover for details)</sup>")
+```
+
+![Static map of electrical plants in Massachusetts](open_street_map.png)
+
+Also, note in the docstring that you can use keyword arguments to set the figure titles, initial zoom level, and width and height of the static images. The zoom, width, and height, are useful for fitting the inital view of the map to the total area you are examining.
+
+
+
 
 
