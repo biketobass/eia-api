@@ -109,7 +109,7 @@ The `Eia.map_electric_plants` method uses the [Plotly Express](https://plotly.co
 
 Use the `facets` keyword argument to specify the region of interest and use the `open_street` and `mapbox` boolean flags to specify whether you want to use [OpenStreetMap](https://www.openstreetmap.org/) map data and/or [Mapbox](https://www.mapbox.com/) data. Note that if you use Mapbox data, you will first need to register for an API token and add it to the `api_key.json` file as described [above](#eia-api). If you use OpenStreetMap, you do not need an API token. Consult the docstring in `eia.py` for more information about the method.
 
-Below is an example showing a static map of the eletric power plants in Massachusets.  The code, which also generates a dynamic HTML file, used to create the map is also shown. Note that the title string contains HTML tags which Plotly Express uses for formatting.
+Below is an example showing a static map of the electric power plants in Massachusets.  The code, which also generates a dynamic HTML file, used to create the map is also shown. Note that the title string contains HTML tags which Plotly Express uses for formatting.
 ```
 data_getter = eia.Eia()
 data_getter.map_electric_plants(facets={'stateid':['MA']}, mapbox=False, open_street=True,
