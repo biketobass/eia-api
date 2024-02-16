@@ -361,7 +361,7 @@ class Eia :
                                        labels={"energy-source-desc":"Energy Source"}
                                        )
             os_fig.update_layout(mapbox_style="open-street-map")
-            os_fig.write_html(open_street_file_name+".html", full_html=False, include_plotlyjs='cdn')
+            os_fig.write_html(open_street_file_name+".html", include_plotlyjs='cdn')
             os_fig.update_layout(title=static_fig_title)
             os_fig.write_image(open_street_file_name+".png", width=static_width, height=static_height)
         
@@ -377,7 +377,7 @@ class Eia :
                                        title=dynamic_fig_title,
                                        labels={"energy-source-desc":"Energy Source"}
                                        )
-            mb_fig.write_html(mapbox_file_name+".html")
+            mb_fig.write_html(mapbox_file_name+".html",  include_plotlyjs='cdn')
             mb_fig.update_layout(title=static_fig_title)
             mb_fig.write_image(mapbox_file_name+".png", width=static_width, height=static_height)
         

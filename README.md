@@ -121,6 +121,22 @@ data_getter.map_electric_plants(facets={'stateid':['MA']}, mapbox=False, open_st
 
 Also, note in the docstring that you can use keyword arguments to set the figure titles, initial zoom level, and width and height of the static images. The zoom, width, and height, are useful for fitting the inital view of the map to the total area you are examining.
 
+## Keyword Arguments
+
+`EIA.map_electric_plants` takes several key word arguments. I describe each below:
+
+- `facets`: This is a dictionary of facets used to define the region of interest. In the examples above `facets={'stateid':['MA']}`. You could produce a map of all New England States with `facets={'stateid':['MA', "NH", "CT", "ME", "VT", "RI"]}`
+- `start`: You can pretty much ignore this. The call to the EIA API needs a start date for the data it retrieves. Since the method uses only the latest reporting period, you should not need to change the default.
+- `open_street`: If True (the default), it uses OpenStreetMap underlying map data.
+- `mapbox`: If True (not the default), it uses Mapbox data and requires a Mapbox API token (see the README).
+- `dynamic_fig_title`: The title to appear on the dynamic, interactive map
+- `static_fig_title`: The title to appear on the static map
+- `init_zoom`: The initial zoom level of the interactive map. The default is 7. You may need to adjust it depending on the size of the region.
+- `open_street_file_name`: The file name (without suffix) to give to a map using OpenStreetMap data. The suffix is added automatically depending on whether it's dynamic (.html) or static (.png)
+- `mapbox_file_name`: Just like the above but with regard to Mapbox
+- `static_width`: The width of the static image. You may need to adjust from the default depending on the region.
+- `static_height`: The height of the static image. You may need to adjust from the default depending on the region.
+
 
 
 
